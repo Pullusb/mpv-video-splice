@@ -1,7 +1,24 @@
-# mpv-video-splice
-An mpv player script that helps you create a video out of cuts made in the current playing video.
+# mpv-video-splice for windows
+An mpv player script that helps you create a video out of cuts made in the current playing video.  
 
 **Requires: ffmpeg**
+
+Use ffmpeg copy-stream feature, cut is super fast instant.
+But for multiple cuts, note that the concat merge of ffmpeg is not magic and can fails
+
+/* Pullusb notes
+
+**/!\ This fork is a windows port of the [original code of pvpscript](https://github.com/pvpscript/mpv-video-splice)**  
+Go there if you are Unix user. 
+
+This is 80% the same as original scripts but things are handled slightly differently:
+
+- video are exported in the same directory as the original video
+- Does not create tmp folder when only one slice is made
+- Keep multi slices file (Generated `tmp` directory is not deleted).
+- Add start-time-endtime in name of video instead of a random unique ID sequence
+
+Pullusb notes */
 
 ## Description
 This script provides the hability to create video slices by grabbing two
@@ -104,10 +121,47 @@ e.g.: `export MPV_SPLICE_OUTPUT="$HOME/output_location"`
 script might fail.**
 
 
-
 # Installation
 
-To install this script, simply add it to your script folder, located at
+Simply add it to your script folder
+
+On windows, located in appdata, create scripts folder if necessary
+`C:\Users\USERNAME\AppData\Roaming\mpv\scripts`
+
+[On unix](https://github.com/pvpscript/mpv-video-splice), in config
 `$HOME/.config/mpv/scripts`
 
+
 When the mpv player gets started up, the script will be executed and will be ready to use.
+
+---
+
+Further notes taken from the readme of https://github.com/AleXoundOS/mpv-cut/
+
+### Usage hints
+MPV provides a number of useful keybindings for navigation, what makes it a
+very convenient tool for cutting.
+
+key binding        | seek action
+------------------ | ------------
+,                  | backward 1 frame and pause
+.                  | forward 1 frame and pause
+Ctrl + left arrow  | backward 1 second
+Ctrl + right arrow | forward 1 second
+left arrow         | backward 5 seconds
+right arrow        | forward 5 seconds
+down arrow         | backward 10 seconds
+up arrow           | forward 10 seconds
+Shift + PgDn       | backward 10 minutes
+Shift + PgUp       | forward 10 minutes
+
+Also playback speed is adjustable:
+
+key binding        | action
+------------------ | ------------
+[                  | decrease playback speed by 10%
+]                  | increase playback speed by 10%
+Backspace          | reset playback speed to normal
+
+For more information about MPV usage refer to it's
+[documentation](https://mpv.io/manual/stable/).

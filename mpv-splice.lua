@@ -1,7 +1,8 @@
 -- -----------------------------------------------------------------------------
 --
--- MPV Splice
--- URL: https://github.com/pvpscript/mpv-video-splice
+-- MPV Splice (Windows port) URL : https://github.com/Pullusb/mpv-video-splice
+-- 
+-- Forked from : https://github.com/pvpscript/mpv-video-splice
 --
 -- Requires: ffmpeg
 --
@@ -120,18 +121,25 @@ local msg = require 'mp.msg'
 --------------------------------------------------------------------------------
 -- Default variables
 
-local default_tmp_location = "/tmp"
-local default_output_location = mp.get_property("working-directory")
+local cdw = mp.get_property("working-directory")
+-- local default_tmp_location = "C:/Users/Samuel/AppData/Local/Temp"--"/tmp"
+local default_tmp_location = string.format("%s/%s", cdw, 'tmp')
+-- local default_output_location = "E:/Films/SERIE/mando/out"
+local default_output_location = cdw
 
 --------------------------------------------------------------------------------
 
 local concat_name = "concat.txt"
 
-local ffmpeg = "ffmpeg -hide_banner -loglevel warning"
+local ffmpeg = "ffmpeg -hide_banner -loglevel warning"-- panic 
+
+--[[ local tmp_location = default_tmp_location
+local output_location = default_output_location ]]
 
 local tmp_location = os.getenv("MPV_SPLICE_TEMP")
 	and os.getenv("MPV_SPLICE_TEMP")
 	or default_tmp_location
+
 local output_location = os.getenv("MPV_SPLICE_OUTPUT")
 	and os.getenv("MPV_SPLICE_OUTPUT")
 	or default_output_location
@@ -239,60 +247,74 @@ function delete_slice()
 	end
 end
 
+function fmt_time(time_string)
+	local new_time = time_string:gsub(':', '_'):gsub('[.]','_')
+	return new_time
+end
+
 function process_video()
-	local alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	local rnd_size = 10
-
-	local pieces = {}
-
-	-- Better seed randomization
-	math.randomseed(os.time())
-	math.random(); math.random(); math.random()
-
 	if times[#times] then
-		local tmp_dir = io.popen(string.format("mktemp -d -p %s",
-			tmp_location)):read("*l")
-		local input_file = mp.get_property("path")
+		
+		local input_file = mp.get_property("path"):gsub("\\","/")
+		local filename = mp.get_property("filename/no-ext")
 		local ext = string.gmatch(input_file, ".*%.(.*)$")()
 
-		local rnd_str = ""
-		for i=1,rnd_size,1 do
-			local rnd_index = math.floor(math.random() * #alphabet + 0.5)
-			rnd_str = rnd_str .. alphabet:sub(rnd_index, rnd_index)
-		end
+		local start_to_end = string.format("%s-%s",
+			fmt_time(times[1].t_start), fmt_time(times[#times].t_end))
 
-		local output_file = string.format("%s/%s_%s_cut.%s",
+		local output_file = string.format("%s/%s-%s.%s",
 			output_location,
-			mp.get_property("filename/no-ext"),
-			rnd_str, ext)
+			filename,
+			start_to_end, ext)
 
-		local cat_file_name = string.format("%s/%s", tmp_dir, "concat.txt")
-		local cat_file_ptr = io.open(cat_file_name, "w")
-
-		notify(2000, "Process started!")
-
-		for i, obj in ipairs(times) do
-			local path = string.format("%s/%s_%d.%s",
-				tmp_dir, rnd_str, i, ext)
-			cat_file_ptr:write(string.format("file '%s'\n", path))
-			os.execute(string.format("%s -ss %s -i \"%s\" -to %s " ..
+		-- If only one, do the render directly and return early like mf**python
+		if #times == 1 then
+			notify(2000, "Single cut started!")
+			local cmd = string.format("%s -ss %s -i \"%s\" -to %s " ..
 				"-c copy -copyts -avoid_negative_ts make_zero \"%s\"",
-				ffmpeg, obj.t_start, input_file, obj.t_end,
-				path))
+				ffmpeg, times[1].t_start, input_file, times[1].t_end,
+				output_file)
+			print(cmd)
+			os.execute(cmd)
+			-- notify(2000, "Single cut Done!")
+			-- do return end
+		else
+
+			notify(2000, "Multi cut started!")
+
+			local tmp_dir = tmp_location
+
+			local create_dir_cmd = string.format('md "%s"',tmp_location)
+			print(create_dir_cmd)
+			os.execute(create_dir_cmd)
+
+			local cat_file_name = string.format("%s/%s", tmp_dir, "concat.txt")
+			local cat_file_ptr = io.open(cat_file_name, "w")
+
+			for i, obj in ipairs(times) do
+				local path = string.format("%s/%s-%s-%s_%d.%s",
+					tmp_dir, filename, fmt_time(obj.t_start), fmt_time(obj.t_end), i, ext)
+
+				cat_file_ptr:write(string.format("file 'file:%s'\n", path))-- (add file: or just use basename)
+				local single_file_cmd = string.format("%s -n -ss %s -i \"%s\" -to %s " ..
+					"-c copy -copyts -avoid_negative_ts make_zero \"%s\"",
+					ffmpeg, obj.t_start, input_file, obj.t_end,
+					path)
+				
+				print(single_file_cmd)
+				os.execute(single_file_cmd)
+			end
+			
+			cat_file_ptr:close()
+
+			local cmd = string.format("%s -f concat -safe 0 -i \"%s\" " ..
+				"-c copy \"%s\"",
+				ffmpeg, cat_file_name, output_file)
+			print('concat cmd ', cmd)
+			os.execute(cmd)
+
 		end
-
-		cat_file_ptr:close()
-
-		cmd = string.format("%s -f concat -safe 0 -i \"%s\" " ..
-			"-c copy \"%s\"",
-			ffmpeg, cat_file_name, output_file)
-		os.execute(cmd)
-
 		notify(10000, "File saved as: ", output_file)
-		msg.info("Process ended!")
-
-		os.execute(string.format("rm -rf %s", tmp_dir))
-		msg.info("Temporary directory removed!")
 	end
 end
 
