@@ -4,7 +4,7 @@ An mpv player script that helps you create a video out of cuts made in the curre
 Use ffmpeg copy-stream feature, cut is super fast instant.
 But for multiple cuts, note that the concat merge of ffmpeg is not magic and can fail depending on source footage.
 
-If you want to reencode instead of the slice, modify the script or head to this one (no multicut/concat) : [Pullusb/mpv_slicing](https://github.com/Pullusb/mpv_slicing)  
+If you want to reencode, modify the script or head to this one (do single cut, no concat) : [Pullusb/mpv_slicing](https://github.com/Pullusb/mpv_slicing)  
 You can load both scripts (no keymap overlap)
 
 **Requires: ffmpeg**
@@ -18,7 +18,7 @@ Go there if you are Unix user.
 This is 80% the same as original scripts but things are handled slightly differently:
 
 - video are exported in the same directory as the original video
-- Does not create tmp folder when only one slice is made
+- Does not create `tmp` folder when only one slice is made
 - Keep multi slices file (Generated `tmp` directory is not deleted).
 - Add start-time-endtime in name of video instead of a random unique ID sequence
 
