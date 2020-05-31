@@ -1,10 +1,14 @@
 # mpv-video-splice for windows
 An mpv player script that helps you create a video out of cuts made in the current playing video.  
 
+Use ffmpeg copy-stream feature, cut is super fast instant.
+But for multiple cuts, note that the concat merge of ffmpeg is not magic and can fail depending on source footage.
+
+If you want to reencode instead of the slice, modify the script or head to this one (no multicut/concat) : [Pullusb/mpv_slicing](https://github.com/Pullusb/mpv_slicing)  
+You can load both scripts (no keymap overlap)
+
 **Requires: ffmpeg**
 
-Use ffmpeg copy-stream feature, cut is super fast instant.
-But for multiple cuts, note that the concat merge of ffmpeg is not magic and can fails
 
 /* Pullusb notes
 
